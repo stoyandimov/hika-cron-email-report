@@ -72,11 +72,8 @@ class plgHikashopCron_Email_Report extends JPlugin
         $emailBody  = $this->renderDay(time() + (60 * 60 * 24));
         
         if(count(1) > 0) {
-            // Prodcut1 - 25
-            // Product2 - 23
             $emailBody .= $this->renderProductsByDate($date);
-            
-            // $emailBody .= $this->renderOrders($orders, $date);
+            $emailBody .= $this->renderOrderByDate($date);
         } else {
             $emailBody .= $this->renderNoOrders();
         }
@@ -102,40 +99,8 @@ class plgHikashopCron_Email_Report extends JPlugin
          
          $emails = explode($strEmails, ";");
          return $emails;
-    }
-        
-    /**
-     * Returns array of order_ids
-     * 
-     * @param array $orders
-     * @return array Order Ids
-     */
-    protected function getOrderIds(array $orders) 
-    {
-        $ids = array();
-        foreach ($orders as $order) {
-            $ids[] = $order->order_id;
-        }
-        
-        return $ids;
-    }
+    }      
     
-    /**
-     * Returns all the products in the orders set
-     * 
-     * @param array $orders The orders
-     * @return array $products or null when 0 products
-     */
-    protected function getProductsFromOrder(stdClass $order) 
-    {
-        $products = array();
-        foreach ($order->cart->products as $product) {
-            $products[$product->product_id] = $product;
-        }
-        
-        return count($products) > 0 ? $products : null;
-    }
-        
     /**
      * Sends the report via email to a list of recipient
      * 
@@ -226,16 +191,53 @@ class plgHikashopCron_Email_Report extends JPlugin
         return $html;
     }
     
-    protected function renderOrders(array $orders) 
+    protected function renderOrderByDate($date) 
     {
-        $productObject = $this->getProductObject();
+        //$productObject = $this->getProductObject();
         //get the product object and load the product with the IDs from $order->products
-        foreach ($orders as $order) {
-            foreach ($order->products as $product) {
-                $prod = $productObject->get($product->product_id);
-                var_dump($prod->date);
+        
+        // Prep and execute query
+        $query  = "SELECT ";
+        $query .= " 	ha.address_title            AS title, ";
+	$query .= " 	ha.address_firstname        AS firstName, ";
+        $query .= " 	ha.address_middle_name      AS middleName, ";
+        $query .= " 	ha.address_lastname         AS lastName, ";
+        
+        $query .= " 	ha.address_company          AS companyStreet, ";
+        $query .= " 	ha.address_street           AS street, ";
+        $query .= " 	ha.address_post_code        AS postcode, ";
+        $query .= " 	ha.address_state            AS state, ";
+       
+        $query .= " 	ha.address_telephone    AS telephone ";
+	$query .= " FROM  #__hikashop_order_product hop ";
+	$query .= " INNER JOIN #__hikashop_order   ho ON ho.order_id   = hop.order_id ";
+	$query .= " INNER JOIN #__hikashop_product hp ON hp.product_id = hop.product_id ";
+        $query .= " INNER JOIN #__hikashop_address ha ON ha.address_id = ho.order_shipping_address_id ";
+	$query .= " WHERE hp.date = '{$date}' ";
+        
+        $db = JFactory::getDbo();
+        $db->setQuery($query);
+        $resultSet = $db->execute();
+        
+        // Iterate over results and prep HTML
+        $html = "";
+        if ($resultSet) {
+            $html = '<h2>Orders</h2>';
+            $html .= '<ul class="list-group">';
+            while($row = mysql_fetch_assoc($resultSet)) {
+                $html .= '  <li class="list-group-item">';
+                $html .= "      {$row['title']}. {$row['firstName']} {$row['middleName']} {$row['lastName']}";
+                $html .=        $row['companyStreet'] == "" ? "Address: " : "Company Address: ";
+                $html .=        $row['companyStreet'] == "" ?  $row['street'] :  $row['companyStreet'];
+                $html .= "      , {$row['postcode']} {$row['state']}";
+
+                $html .= "      Telephone: {$row['telephone']} ";
+                $html .= '  </li>';
             }
+             $html .= '</ul>';
         }
+        
+        return $html;
     }
     
     

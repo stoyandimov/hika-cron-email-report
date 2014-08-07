@@ -48,27 +48,25 @@ class plgHikashopCron_Email_Report extends JPlugin
      */
     function onHikashopCronTrigger(&$messages) 
     {
-        // The data of the meals (always tomorrow)
-        $date  = strftime("%d/%m/%Y", time() + (60 * 60 * 24));
-        // Get the orders for the last 4 weeks
-        $lastWeeks = (int) $this->params->get("lastWeeks", 4);
-        $since = time() - ((int) $lastWeeks * 7 * 24 * 60 * 60);
-        //$orders = $this->getOrdersForTomorrow($date, $lastWeeks);
         
-        
-        
+        // Sets 'From' email address
         $fromEmail = $this->params->get('from_email', null);
         if (!$fromEmail) {
             throw new JException("No 'from email' set for " . __METHOD__);
         }
         $fromName  = $this->params->get('from_name', $fromEmail);
         
-        
+        // Sets 'To' email address
         $to = $this->getEmailsFromParams();
         if (!$to) {
             throw new JException("No 'to email(s)' set for " . __METHOD__);
         }
-        $emailSubject = $this->params->get("email_subject");
+        
+        // The data of the meals (always tomorrow)
+        $date  = strftime("%d/%m/%Y", time() + (60 * 60 * 24));
+        
+        // Sets email subject
+        $emailSubject = $this->params->get("email_subject", "Cron Report for " . $date);
 
         // Monday - (2014-06-02)
         $emailBody  = $this->renderDay(time() + (60 * 60 * 24));
@@ -76,7 +74,7 @@ class plgHikashopCron_Email_Report extends JPlugin
         if(count(1) > 0) {
             // Prodcut1 - 25
             // Product2 - 23
-            $emailBody .= $this->renderProducts($date, $since);
+            $emailBody .= $this->renderProductsByDate($date);
             
             // $emailBody .= $this->renderOrders($orders, $date);
         } else {
@@ -155,53 +153,7 @@ class plgHikashopCron_Email_Report extends JPlugin
         
         return count($products) > 0 ? $products : null;
     }
-      
-    /**
-     * Returns all the orders within a period. If no orders returns null
-     * 
-     * @param timestamp $periodBegin Begin Period
-     * @param timestamp $periodEnd   End Period
-     * @return array    $orders or null when 0 orders
-     */
-    protected function getOrdersForTomorrow($date, $since) 
-    {
         
-        
-        // Query getting all the orders within the $lastWeeks
-//        $query  = "SELECT ho.order_id ";
-//        $query .= " FROM #__hikashop_order ho ";           
-//        $query .= " WHERE ho.order_created > " . $since;           
-
-        $query  = "SELECT ";
-	$query .= " 	hop.order_product_name AS product, ";
-	$query .= " 	COUNT(hop.order_product_quantity) AS count ";
-	$query .= " FROM  #__hikashop_order_product hop ";
-	$query .= " INNER JOIN #__hikashop_order   ho ON ho.order_id   = hop.order_id ";
-	$query .= " INNER JOIN #__hikashop_product hp ON hp.product_id = hop.product_id ";
-	$query .= " WHERE ho.order_created >= {$since} ";
-        $query .= "   AND hp.date = '{$date}' ";
-	$query .= " GROUP BY hop.order_product_name ";
-        
-        // Executing query
-        $db = JFactory::getDbo();
-        $db->setQuery($query);
-        $resultSet = $db->execute();
-        
-        // Preparing orders array
-        $orderObject = $this->getOrderObject();
-        $orders = array();
-        if ($resultSet) {
-            while($row = mysql_fetch_assoc($resultSet)) {
-                $order = $orderObject->loadFullOrder($row['order_id'], true, false);
-                if ($order) {
-                    $orders[] = $order;
-                }
-            }
-        }
-        
-        return count($orders) > 0 ? $orders : null;
-    }
-    
     /**
      * Sends the report via email to a list of recipient
      * 
@@ -229,6 +181,8 @@ class plgHikashopCron_Email_Report extends JPlugin
     // HTML LAYOUT METHODS
     
     /**
+     * Returns date information [Day 25/12/2014]
+     * 
      * @param type $date
      * @return string Header with date (html)
      */
@@ -238,6 +192,11 @@ class plgHikashopCron_Email_Report extends JPlugin
          return "<h1>{$dateString}</h1>";
     }
     
+    /**
+     * Returns 'No orders' message
+     * 
+     * @return string The message
+     */
     protected function renderNoOrders() 
     {
         return "<div class='alert alert-info'>"
@@ -246,17 +205,22 @@ class plgHikashopCron_Email_Report extends JPlugin
              . "</div>";
     }
     
-    protected function renderProducts($date, $since)
+    /**
+     * Returns the products and quantities HTML or empty string
+     * 
+     * @param type $date
+     * @return string The products/quantities HTML or empty string
+     */
+    protected function renderProductsByDate($date)
     {
         // Prep and execute query
         $query  = "SELECT ";
 	$query .= " 	hop.order_product_name AS productName, ";
-	$query .= " 	COUNT(hop.order_product_quantity) AS productCount ";
+	$query .= " 	SUM(hop.order_product_quantity) AS productQuantity ";
 	$query .= " FROM  #__hikashop_order_product hop ";
 	$query .= " INNER JOIN #__hikashop_order   ho ON ho.order_id   = hop.order_id ";
 	$query .= " INNER JOIN #__hikashop_product hp ON hp.product_id = hop.product_id ";
-	$query .= " WHERE ho.order_created >= {$since} "; 
-        $query .= "   AND hp.date = '{$date}' ";
+	$query .= " WHERE hp.date = '{$date}' ";
 	$query .= " GROUP BY hop.order_product_name ";
         
         $db = JFactory::getDbo();
@@ -271,7 +235,7 @@ class plgHikashopCron_Email_Report extends JPlugin
             while($row = mysql_fetch_assoc($resultSet)) {
                 $html .= '  <li class="list-group-item">';
                 $html .= "      {$row['productName']}";
-                $html .= "      <span class='badge'>{$row['productCount']}</span>";
+                $html .= "      <span class='badge'>{$row['productQuantity']}</span>";
                 $html .= '  </li>';
             }
              $html .= '</ul>';

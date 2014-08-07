@@ -104,24 +104,6 @@ class plgHikashopCron_Email_Report extends JPlugin
          return $emails;
     }
         
-    protected function getProductsCountFromOrders($productId, array $orders)
-    {
-        $count = 0;
-        foreach ($orders as $order) {
-                echo $order;
-
-            foreach ($order->cart->products as $product) {
-                if ((int)$product->product_id == (int) $productId) {
-                    $count += (int) $product->order_product_quantity;
-                }
-            }
-        }
-        
-        return $count;
-    }
-    
-   
-    
     /**
      * Returns array of order_ids
      * 

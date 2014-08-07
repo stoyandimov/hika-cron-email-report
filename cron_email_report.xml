@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.1" type="plugin" group="hikashop">
+    <name>HikaShop Cron Email Report</name>
+    <author>Stoyan Dimov</author>
+    <creationDate>May 2014</creationDate>
+    <copyright>Copyright (C) Stoyan Dimov 2014</copyright>
+    <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+    <authorEmail>stoyandimov@hotmail.com</authorEmail>
+    <authorUrl>http://www.stoyandimov.com</authorUrl>
+    <version>3.1.0</version>
+    <description>Plugin sending email report upon Hikashop cron trigger.</description>
+    <files>
+        <filename plugin="cron_email_report">cron_email_report.php</filename>
+        <filename>index.html</filename>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="from_name" type="text"
+                       description="The name associated with the from email address"
+                       label="Form Name"
+                />
+
+                <field name="from_email" type="text"
+                       description="The from email address"
+                       label="Form Email"
+                       required="true"
+                />
+
+                <field name="to_emails" type="text"
+                       description="The destination email address(es) (';' email seperator)"
+                       label="To Email(s)"
+                       required="true"
+                />
+                
+                <field name="email_subject" type="text"
+                       description="The email subject"
+                       label="Email Subject"
+                       default="HikaShop Cron Email Report"
+                       required="true"
+                />
+                
+                <field name="lastWeeks" type="integer"
+                       description="Specifies the number of weeks to check for orders with product date tomorrrow"
+                       first="1"
+                       last="12"
+                       step="1"
+                       label="Check last N weeks"
+                       default="4"
+                       required="true"
+                />
+                    
+            </fieldset>
+
+        </fields>
+    </config>
+</extension>

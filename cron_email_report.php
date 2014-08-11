@@ -48,7 +48,6 @@ class plgHikashopCron_Email_Report extends JPlugin
      */
     function onHikashopCronTrigger(&$messages) 
     {
-        
         // Sets 'From' email address
         $fromEmail = $this->params->get('from_email', null);
         if (!$fromEmail) {
@@ -63,24 +62,22 @@ class plgHikashopCron_Email_Report extends JPlugin
         }
         
         // The data of the meals (always tomorrow)
-        $date  = strftime("%d/%m/%Y", time() + (60 * 60 * 24));
+        $date = time() + (60 * 60 * 24);
+        $strDate  = strftime("%d/%m/%Y", $date);
         
         // Sets email subject
-        $emailSubject = $this->params->get("email_subject", "Cron Report for " . $date);
-
-        // Monday - (2014-06-02)
-        $emailBody  = $this->renderDay(time() + (60 * 60 * 24));
+        $emailSubject = $this->params->get("email_subject", "Cron Report for " . $strDate);
         
-        if(count(1) > 0) {
-            $emailBody .= $this->renderProductsByDate($date);
-            $emailBody .= $this->renderOrderByDate($date);
-        } else {
-            $emailBody .= $this->renderNoOrders();
-        }
+        $htmlLayout = $this->getLayout(
+            $date, 
+            $this->renderProductsByDate($strDate), 
+            $this->renderOrderByDate($strDate)
+        );
         
-        echo $emailBody;
+        echo $htmlLayout;
+        
         return true;
-        if ($this->sendEmail($fromEmail, $fromName, $to, $emailBody, $emailSubject)) {
+        if ($this->sendEmail($fromEmail, $fromName, $to, $htmlLayout, $emailSubject)) {
             
         } else {
             
@@ -127,29 +124,33 @@ class plgHikashopCron_Email_Report extends JPlugin
     
     // HTML LAYOUT METHODS
     
-    /**
-     * Returns date information [Day 25/12/2014]
-     * 
-     * @param type $date
-     * @return string Header with date (html)
-     */
-    protected function renderDay($date) 
+    protected function getLayout($date, $productsHTML, $ordersHTML)
     {
-         $dateString = strftime("%A (%d/%m/%Y)", $date);
-         return "<h1>{$dateString}</h1>";
-    }
-    
-    /**
-     * Returns 'No orders' message
-     * 
-     * @return string The message
-     */
-    protected function renderNoOrders() 
-    {
-        return "<div class='alert alert-info'>"
-                . "<i class='glyphicon glyphicon-info-sign'></i>"
-                . "&nbsp; No orders for {$date}"
-             . "</div>";
+        return '<!DOCTYPE html>
+                <html>
+                    <head>
+                        <meta charset="utf-8" />
+                        <title>Cron email report</title>
+                        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+                        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+                    </head>
+                    <body>
+                        <article class="container">
+                            <section>
+                                <hgroup>
+                                    <h2>Hikashop Cron Email Report</h2>
+                                    <h3>' . strftime("%A (%d/%m/%Y)", $date) . '</h3>
+                                </hgroup>
+                            </section>
+                            <section>
+                                ' . $productsHTML . '
+                            </section>
+                            <section>
+                                ' . $ordersHTML . '
+                            </section>
+                        </section>
+                    </body>
+                </html>';
     }
     
     /**
@@ -169,28 +170,35 @@ class plgHikashopCron_Email_Report extends JPlugin
 	$query .= " INNER JOIN #__hikashop_product hp ON hp.product_id = hop.product_id ";
 	$query .= " WHERE hp.date = '{$date}' ";
 	$query .= " GROUP BY hop.order_product_name ";
-        
         $db = JFactory::getDbo();
         $db->setQuery($query);
         $resultSet = $db->execute();
         
         // Iterate over results and prep HTML
-        $html = "";
-        if ($resultSet) {
-            $html = '<h2>Products</h2>';
-            $html .= '<ul class="list-group">';
+        $html  = '<div class="panel panel-default">';
+        $html .= '  <div class="panel-heading">Products</div>';
+        $html .= '  <ul class="list-group" style="margin-left: 0">';
+        if (mysql_num_rows($resultSet) != 0) {
             while($row = mysql_fetch_assoc($resultSet)) {
-                $html .= '  <li class="list-group-item">';
-                $html .= "      {$row['productName']}";
-                $html .= "      <span class='badge'>{$row['productQuantity']}</span>";
-                $html .= '  </li>';
+                $html .= '<li class="list-group-item">';
+                $html .= "  <span class='badge pull-left'>{$row['productQuantity']}</span> &nbsp;";                
+                $html .= "  {$row['productName']}";
+                $html .= '</li>';
             }
-             $html .= '</ul>';
+        } else {
+            $html .= '  <li class="list-group-item">';
+            $html .= '      <div class="alert alert-info">';
+            $html .= "          <i class='glyphicon glyphicon-info-sign'></i>";
+            $html .= "          &nbsp; No products for {$date}";
+            $html .= '      </div>';            
+            $html .= '  </li>';
         }
+        $html .= '  </ul>';
+        $html .= '</div>';
         
         return $html;
     }
-    
+
     protected function renderOrderByDate($date) 
     {
         //$productObject = $this->getProductObject();
@@ -199,6 +207,8 @@ class plgHikashopCron_Email_Report extends JPlugin
         // Prep and execute query
         $query  = "SELECT ";
         $query .= " 	ha.address_title            AS title, ";
+        $query .= " 	ha.address_title            AS title, ";
+
 	$query .= " 	ha.address_firstname        AS firstName, ";
         $query .= " 	ha.address_middle_name      AS middleName, ";
         $query .= " 	ha.address_lastname         AS lastName, ";
@@ -208,7 +218,7 @@ class plgHikashopCron_Email_Report extends JPlugin
         $query .= " 	ha.address_post_code        AS postcode, ";
         $query .= " 	ha.address_state            AS state, ";
        
-        $query .= " 	ha.address_telephone    AS telephone ";
+        $query .= " 	ha.address_telephone        AS telephone ";
 	$query .= " FROM  #__hikashop_order_product hop ";
 	$query .= " INNER JOIN #__hikashop_order   ho ON ho.order_id   = hop.order_id ";
 	$query .= " INNER JOIN #__hikashop_product hp ON hp.product_id = hop.product_id ";
@@ -220,12 +230,12 @@ class plgHikashopCron_Email_Report extends JPlugin
         $resultSet = $db->execute();
         
         // Iterate over results and prep HTML
-        $html = "";
-        if ($resultSet) {
-            $html = '<h2>Orders</h2>';
-            $html .= '<ul class="list-group">';
+        $html  = '<div class="panel panel-default">';
+        $html .= '  <div class="panel-heading">Orders</div>';
+        $html .= '  <ul class="list-group" style="margin-left: 0">';
+        if (mysql_num_rows($resultSet) != 0) {
             while($row = mysql_fetch_assoc($resultSet)) {
-                $html .= '  <li class="list-group-item">';
+                $html .= '  <li class="list-group-item active">';
                 $html .= "      {$row['title']}. {$row['firstName']} {$row['middleName']} {$row['lastName']}";
                 $html .=        $row['companyStreet'] == "" ? "Address: " : "Company Address: ";
                 $html .=        $row['companyStreet'] == "" ?  $row['street'] :  $row['companyStreet'];
@@ -234,8 +244,25 @@ class plgHikashopCron_Email_Report extends JPlugin
                 $html .= "      Telephone: {$row['telephone']} ";
                 $html .= '  </li>';
             }
-             $html .= '</ul>';
+        } else {
+            $html .= '  <li class="list-group-item">';
+            $html .= '      <div class="alert alert-info">';
+            $html .= "          <i class='glyphicon glyphicon-info-sign'></i>";
+            $html .= "          &nbsp; No products for {$date}";
+            $html .= '      </div>';            
+            $html .= '  </li>';
         }
+        $html .= '  </ul>';
+        $html .= '</div>';
+
+       
+        /*
+         <div class="panel panel-default">
+                                <div class="panel-heading">Orders</div>
+                                <div class="panel-body">
+                                    
+                                </div>
+                            </div>*/
         
         return $html;
     }

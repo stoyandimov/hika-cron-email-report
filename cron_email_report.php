@@ -70,8 +70,8 @@ class plgHikashopCron_Email_Report extends JPlugin
         
         $htmlLayout = $this->getLayout(
             $date, 
-            $this->renderProductsByDate($strDate), 
-            $this->renderOrderByDate($strDate)
+            $this->getProductsByDateWidget($strDate), 
+            $this->getOrderByDateWidget($strDate)
         );
         
         echo $htmlLayout;
@@ -159,7 +159,7 @@ class plgHikashopCron_Email_Report extends JPlugin
      * @param type $date
      * @return string The products/quantities HTML or empty string
      */
-    protected function renderProductsByDate($date)
+    protected function getProductsByDateWidget($date)
     {
         // Prep and execute query
         $query  = "SELECT ";
@@ -199,7 +199,7 @@ class plgHikashopCron_Email_Report extends JPlugin
         return $html;
     }
 
-    protected function renderOrderByDate($date) 
+    protected function getOrderByDateWidget($date) 
     {
         //$productObject = $this->getProductObject();
         //get the product object and load the product with the IDs from $order->products

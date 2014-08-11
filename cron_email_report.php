@@ -136,19 +136,22 @@ class plgHikashopCron_Email_Report extends JPlugin
                     </head>
                     <body>
                         <article class="container">
-                            <section>
+                            <section class="jumbotron">
                                 <hgroup>
                                     <h2>Hikashop Cron Email Report</h2>
-                                    <h3>' . strftime("%A (%d/%m/%Y)", $date) . '</h3>
+                                    <h3>for ' . strftime("%A (%d/%m/%Y)", $date) . '</h3>
+                                    
                                 </hgroup>
                             </section>
-                            <section>
-                                ' . $productsHTML . '
+                            <section class="row">
+                                <div  class="col-md-8">
+                                    ' . $ordersHTML . '
+                                </div>
+                                <div  class="col-md-4">
+                                    ' . $productsHTML . '
+                                </div>
                             </section>
-                            <section>
-                                ' . $ordersHTML . '
-                            </section>
-                        </section>
+                        </article>
                     </body>
                 </html>';
     }
@@ -161,6 +164,21 @@ class plgHikashopCron_Email_Report extends JPlugin
      */
     protected function getProductsByDateWidget($date)
     {
+        // Iterate over results and prep HTML
+        $html  = '<div class="well">';
+        $html .= '  <div class="panel panel-default">';
+        $html .= '      <div class="panel-heading"><h4>Products</h4></div>';
+        $html .= '      <ul class="list-group" style="margin-left: 0">';
+        $html .= "      {$this->getProductsByDateWidgetInner("WHERE hp.date = '{$date}'")}";
+        $html .= '      </ul>';
+        $html .= '  </div>';
+        $html .= '</div>';
+        
+        return $html;
+    }
+    
+    protected function getProductsByDateWidgetInner($where) 
+    {
         // Prep and execute query
         $query  = "SELECT ";
 	$query .= " 	hop.order_product_name AS productName, ";
@@ -168,16 +186,13 @@ class plgHikashopCron_Email_Report extends JPlugin
 	$query .= " FROM  #__hikashop_order_product hop ";
 	$query .= " INNER JOIN #__hikashop_order   ho ON ho.order_id   = hop.order_id ";
 	$query .= " INNER JOIN #__hikashop_product hp ON hp.product_id = hop.product_id ";
-	$query .= " WHERE hp.date = '{$date}' ";
+	$query .= " {$where} ";
 	$query .= " GROUP BY hop.order_product_name ";
         $db = JFactory::getDbo();
         $db->setQuery($query);
         $resultSet = $db->execute();
-        
-        // Iterate over results and prep HTML
-        $html  = '<div class="panel panel-default">';
-        $html .= '  <div class="panel-heading">Products</div>';
-        $html .= '  <ul class="list-group" style="margin-left: 0">';
+                
+        $html = "";
         if (mysql_num_rows($resultSet) != 0) {
             while($row = mysql_fetch_assoc($resultSet)) {
                 $html .= '<li class="list-group-item">';
@@ -189,12 +204,10 @@ class plgHikashopCron_Email_Report extends JPlugin
             $html .= '  <li class="list-group-item">';
             $html .= '      <div class="alert alert-info">';
             $html .= "          <i class='glyphicon glyphicon-info-sign'></i>";
-            $html .= "          &nbsp; No products for {$date}";
+            $html .= "          &nbsp; No products";
             $html .= '      </div>';            
             $html .= '  </li>';
         }
-        $html .= '  </ul>';
-        $html .= '</div>';
         
         return $html;
     }
@@ -206,9 +219,9 @@ class plgHikashopCron_Email_Report extends JPlugin
         
         // Prep and execute query
         $query  = "SELECT ";
+        $query .= " 	ho.order_id                 AS order_id, ";
+        
         $query .= " 	ha.address_title            AS title, ";
-        $query .= " 	ha.address_title            AS title, ";
-
 	$query .= " 	ha.address_firstname        AS firstName, ";
         $query .= " 	ha.address_middle_name      AS middleName, ";
         $query .= " 	ha.address_lastname         AS lastName, ";
@@ -230,39 +243,39 @@ class plgHikashopCron_Email_Report extends JPlugin
         $resultSet = $db->execute();
         
         // Iterate over results and prep HTML
-        $html  = '<div class="panel panel-default">';
-        $html .= '  <div class="panel-heading">Orders</div>';
-        $html .= '  <ul class="list-group" style="margin-left: 0">';
+        $html  = '<div class="well">';
+        $html .= '  <div class="panel panel-default">';
+        $html .= '      <ul class="list-group" style="margin-left: 0">';
+        $html .= '          <li class="list-group-item"><h4>Orders</h4></li>';
+        $html .= '      </ul>';
+        $html .= '  </div>';
         if (mysql_num_rows($resultSet) != 0) {
             while($row = mysql_fetch_assoc($resultSet)) {
-                $html .= '  <li class="list-group-item active">';
-                $html .= "      {$row['title']}. {$row['firstName']} {$row['middleName']} {$row['lastName']}";
+                $html .= '<div class="panel panel-default">';
+                $html .= '  <ul class="list-group" style="margin-left: 0">';
+                $html .= '  <li class="list-group-item">';
+                $html .= "      <strong>{$row['title']}. {$row['firstName']} {$row['middleName']} {$row['lastName']}</strong>";
+                $html .= "      <br />";
                 $html .=        $row['companyStreet'] == "" ? "Address: " : "Company Address: ";
                 $html .=        $row['companyStreet'] == "" ?  $row['street'] :  $row['companyStreet'];
                 $html .= "      , {$row['postcode']} {$row['state']}";
-
+                $html .= "      <br />";
                 $html .= "      Telephone: {$row['telephone']} ";
                 $html .= '  </li>';
+                
+                $html .= $this->getProductsByDateWidgetInner("WHERE ho.order_id = '{$row['order_id']}' AND hp.date = '{$date}'");
+                $html .= '  </ul>';
+                $html .= '</div>';
             }
         } else {
             $html .= '  <li class="list-group-item">';
             $html .= '      <div class="alert alert-info">';
             $html .= "          <i class='glyphicon glyphicon-info-sign'></i>";
-            $html .= "          &nbsp; No products for {$date}";
+            $html .= "          &nbsp; No orders";
             $html .= '      </div>';            
             $html .= '  </li>';
         }
-        $html .= '  </ul>';
         $html .= '</div>';
-
-       
-        /*
-         <div class="panel panel-default">
-                                <div class="panel-heading">Orders</div>
-                                <div class="panel-body">
-                                    
-                                </div>
-                            </div>*/
         
         return $html;
     }

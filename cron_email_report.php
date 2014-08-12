@@ -135,23 +135,27 @@ class plgHikashopCron_Email_Report extends JPlugin
                         <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
                     </head>
                     <body>
-                        <article class="container">
-                            <section class="jumbotron">
+                        <section class="container">
+                            <header class="jumbotron">
                                 <hgroup>
                                     <h2>Hikashop Cron Email Report</h2>
                                     <h3>for ' . strftime("%A (%d/%m/%Y)", $date) . '</h3>
-                                    
                                 </hgroup>
-                            </section>
-                            <section class="row">
-                                <div  class="col-md-8">
+                            </header>
+                            <article class="row">
+                                <section  class="col-md-8">
                                     ' . $ordersHTML . '
-                                </div>
-                                <div  class="col-md-4">
+                                </section>
+                                <section  class="col-md-4">
                                     ' . $productsHTML . '
-                                </div>
-                            </section>
-                        </article>
+                                </section>
+                            </article>
+                            <footer>
+                                <section class="well">
+                                    <h5 class="text-right">Found a bug? Report it on the <a href="https://github.com/stoyandimov/hika-cron-email-report/issues">Github Issue Tracker</a></h5>
+                                </section>
+                            </footer> 
+                        </section>
                     </body>
                 </html>';
     }
@@ -165,14 +169,12 @@ class plgHikashopCron_Email_Report extends JPlugin
     protected function getProductsByDateWidget($date)
     {
         // Iterate over results and prep HTML
-        $html  = '<div class="well">';
-        $html .= '  <div class="panel panel-default">';
+        $html  = '  <div class="panel panel-default">';
         $html .= '      <div class="panel-heading"><h4>Products</h4></div>';
         $html .= '      <ul class="list-group" style="margin-left: 0">';
         $html .= "      {$this->getProductsByDateWidgetInner("WHERE hp.date = '{$date}'")}";
         $html .= '      </ul>';
         $html .= '  </div>';
-        $html .= '</div>';
         
         return $html;
     }

@@ -105,7 +105,7 @@ class plgHikashopCron_Email_Report extends JPlugin
      * 
      * @param string $fromEmail The email
      * @param string $fromName  The name
-     * @param array $to         Array of recipients emails
+     * @param array  $to        Array of recipients emails
      * @param string $body      The HTML email body
      * @param string $subject   Subject [Optional $subject = "Hekashop Cron Report"]
      * @return boolean          True on success, otherwise false
@@ -124,8 +124,17 @@ class plgHikashopCron_Email_Report extends JPlugin
         return $mailer->Send();
     }
     
+    
     // HTML LAYOUT METHODS
     
+    /**
+     * Returns the complete layout for the email body
+     * 
+     * @param string $date E.g. 13/08/2014
+     * @param string $productsHTML
+     * @param string $ordersHTML
+     * @return string Layout
+     */
     protected function getLayout($date, $productsHTML, $ordersHTML)
     {
         return '<!DOCTYPE html>
@@ -181,6 +190,13 @@ class plgHikashopCron_Email_Report extends JPlugin
         return $html;
     }
     
+    /**
+     * Returns the HTML content for the products section
+     * 
+     * @param string $date  E.g. 13/08/2014
+     * @param string $where The where clouse for the product's SELECT query 
+     * @return string HTML
+     */
     protected function getProductsByDateWidgetInner($where) 
     {
         // Prep and execute query
@@ -216,7 +232,13 @@ class plgHikashopCron_Email_Report extends JPlugin
         
         return $html;
     }
-
+    
+    /**
+     * Returns the HTML content for the orders section
+     * 
+     * @param string $date E.g. 13/08/2014
+     * @return string HTML
+     */
     protected function getOrderByDateWidget($date) 
     {
         //$productObject = $this->getProductObject();

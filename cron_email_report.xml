@@ -18,12 +18,12 @@
             <fieldset name="basic">
                 <field name="from_name" type="text"
                        description="The name associated with the from email address"
-                       label="Form Name"
+                       label="From Name"
                 />
 
                 <field name="from_email" type="text"
                        description="The from email address"
-                       label="Form Email"
+                       label="From Email"
                        required="true"
                 />
 

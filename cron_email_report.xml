@@ -40,16 +40,6 @@
                        required="true"
                 />
                 
-                <field name="lastWeeks" type="integer"
-                       description="Specifies the number of weeks to check for orders with product date tomorrrow"
-                       first="1"
-                       last="12"
-                       step="1"
-                       label="Check last N weeks"
-                       default="4"
-                       required="true"
-                />
-                    
             </fieldset>
 
         </fields>

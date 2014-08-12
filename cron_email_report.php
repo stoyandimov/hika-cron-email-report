@@ -76,14 +76,14 @@ class plgHikashopCron_Email_Report extends JPlugin
             $this->getOrderByDateWidget($strDate)
         );
         
-        echo $htmlLayout;
+        // echo $htmlLayout; return true;
         
-        return true;
         if ($this->sendEmail($fromEmail, $fromName, $to, $htmlLayout, $emailSubject)) {
-            
+            JLog::add("Email successfully sent in " . __METHOD__, JLog::INFO);
         } else {
-            
+            JLog::add("Sending email failed for unknown reason in " . __METHOD__, JLog::CRITICAL);
         }
+        
         return true;
     }
     

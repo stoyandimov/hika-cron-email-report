@@ -51,14 +51,16 @@ class plgHikashopCron_Email_Report extends JPlugin
         // Sets 'From' email address
         $fromEmail = $this->params->get('from_email', null);
         if (!$fromEmail) {
-            throw new JException("No 'from email' set for " . __METHOD__);
+            JLog::add("No 'from email' set for " . __METHOD__, JLog::CRITICAL);
+            return true;
         }
         $fromName  = $this->params->get('from_name', $fromEmail);
         
         // Sets 'To' email address
         $to = $this->getEmailsFromParams();
         if (!$to) {
-            throw new JException("No 'to email(s)' set for " . __METHOD__);
+            JLog::add("No 'to email(s)' set for " . __METHOD__, JLog::CRITICAL);
+            return true;
         }
         
         // The data of the meals (always tomorrow)

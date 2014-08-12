@@ -184,6 +184,7 @@ class plgHikashopCron_Email_Report extends JPlugin
         // Prep and execute query
         $query  = "SELECT ";
 	$query .= " 	hop.order_product_name AS productName, ";
+        $query .= " 	hp.product_id               AS product_id, ";
 	$query .= " 	SUM(hop.order_product_quantity) AS productQuantity ";
 	$query .= " FROM  #__hikashop_order_product hop ";
 	$query .= " INNER JOIN #__hikashop_order   ho ON ho.order_id   = hop.order_id ";
@@ -193,12 +194,12 @@ class plgHikashopCron_Email_Report extends JPlugin
         $db = JFactory::getDbo();
         $db->setQuery($query);
         $resultSet = $db->execute();
-                
+        
         $html = "";
         if (mysql_num_rows($resultSet) != 0) {
             while($row = mysql_fetch_assoc($resultSet)) {
                 $html .= '<li class="list-group-item">';
-                $html .= "  <span class='badge pull-left'>{$row['productQuantity']}</span> &nbsp;";                
+                $html .= "  <span class='badge pull-left product-id-{$row['product_id']}'>{$row['productQuantity']}</span> &nbsp;";                
                 $html .= "  {$row['productName']}";
                 $html .= '</li>';
             }

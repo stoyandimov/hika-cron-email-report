@@ -52,6 +52,7 @@ class plgHikashopCron_Email_Report extends JPlugin
         $fromEmail = $this->params->get('from_email', null);
         if (!$fromEmail) {
             JLog::add("No 'from email' set for " . __METHOD__, JLog::CRITICAL);
+            throw new JException("No 'from email' set for " . __METHOD__);
             return true;
         }
         $fromName  = $this->params->get('from_name', $fromEmail);
@@ -60,6 +61,7 @@ class plgHikashopCron_Email_Report extends JPlugin
         $to = $this->getEmailsFromParams();
         if (!$to) {
             JLog::add("No 'to email(s)' set for " . __METHOD__, JLog::CRITICAL);
+            throw new JException("No 'to email(s)' set for " . __METHOD__);
             return true;
         }
         
@@ -76,12 +78,14 @@ class plgHikashopCron_Email_Report extends JPlugin
             $this->getOrderByDateWidget($strDate)
         );
         
-        // echo $htmlLayout; return true;
+        // echo $htmlLayout; return true; // DEBUGGER :)
         
-        if ($this->sendEmail($fromEmail, $fromName, $to, $htmlLayout, $emailSubject)) {
+        $send = $this->sendEmail($fromEmail, $fromName, $to, $htmlLayout, $emailSubject);
+        if ($send === true) {
             JLog::add("Email successfully sent in " . __METHOD__, JLog::INFO);
         } else {
             JLog::add("Sending email failed for unknown reason in " . __METHOD__, JLog::CRITICAL);
+            throw new JException("Sending email failed in " . __METHOD__ . ": " . $send->__toString());
         }
         
         return true;
@@ -96,7 +100,7 @@ class plgHikashopCron_Email_Report extends JPlugin
              return null;
          }
          
-         $emails = explode($strEmails, ";");
+         $emails = explode(";", $strEmails);
          return $emails;
     }      
     
@@ -118,6 +122,7 @@ class plgHikashopCron_Email_Report extends JPlugin
         }
         $mailer->setFrom($fromEmail, $fromName);
         $mailer->isHtml(true);
+        $mailer->Encoding = 'base64';
         $mailer->setBody($body);
         $mailer->setSubject($subject);
         
@@ -201,7 +206,7 @@ class plgHikashopCron_Email_Report extends JPlugin
     {
         // Prep and execute query
         $query  = "SELECT ";
-	$query .= " 	hop.order_product_name AS productName, ";
+	$query .= " 	hop.order_product_name      AS productName, ";
         $query .= " 	hp.product_id               AS product_id, ";
 	$query .= " 	SUM(hop.order_product_quantity) AS productQuantity ";
 	$query .= " FROM  #__hikashop_order_product hop ";
@@ -248,6 +253,8 @@ class plgHikashopCron_Email_Report extends JPlugin
         $query  = "SELECT ";
         $query .= " 	ho.order_id                 AS order_id, ";
         
+        $query .= "     ho.order_created            AS order_created,";
+        
         $query .= " 	ha.address_title            AS title, ";
 	$query .= " 	ha.address_firstname        AS firstName, ";
         $query .= " 	ha.address_middle_name      AS middleName, ";
@@ -264,6 +271,8 @@ class plgHikashopCron_Email_Report extends JPlugin
 	$query .= " INNER JOIN #__hikashop_product hp ON hp.product_id = hop.product_id ";
         $query .= " INNER JOIN #__hikashop_address ha ON ha.address_id = ho.order_shipping_address_id ";
 	$query .= " WHERE hp.date = '{$date}' ";
+        $query .= " ORDER BY ho.order_created DESC";
+
         
         $db = JFactory::getDbo();
         $db->setQuery($query);
@@ -281,6 +290,8 @@ class plgHikashopCron_Email_Report extends JPlugin
                 $html .= '  <ul class="list-group" style="margin-left: 0">';
                 $html .= '  <li class="list-group-item">';
                 $html .= "      <strong>{$row['title']}. {$row['firstName']} {$row['middleName']} {$row['lastName']}</strong>";
+                $html .= "      <br />";
+                $html .= "      Order created: " . strftime("%A (%d/%m/%Y)", $row['order_created']);
                 $html .= "      <br />";
                 $html .=        $row['companyStreet'] == "" ? "Address: " : "Company Address: ";
                 $html .=        $row['companyStreet'] == "" ?  $row['street'] :  $row['companyStreet'];

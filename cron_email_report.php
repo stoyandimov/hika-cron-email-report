@@ -304,25 +304,5 @@ class plgHikashopCron_Email_Report extends JPlugin
         
         return $html;
     }
-    
-    
-    // FACTGORY METHODS
-    
-    /**
-     * Get a Hika order object
-     * 
-     * @return hikashopOrderClass
-     */
-    protected function getOrderObject() {
-        return hikashop_get('class.order');
-    }
-    
-    /**
-     * Get a Hika product object
-     * 
-     * @return hikashopProductClass
-     */
-    protected function getProductObject() {
-        return hikashop_get('class.product');
-    }
+   
 }

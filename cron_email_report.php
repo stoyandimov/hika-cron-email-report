@@ -78,7 +78,7 @@ class plgHikashopCron_Email_Report extends JPlugin
             $this->getOrderByDateWidget($strDate)
         );
         
-        // echo $htmlLayout; return true; // DEBUGGER :)
+        //echo $htmlLayout; return true; // DEBUGGER :)
         
         $send = $this->sendEmail($fromEmail, $fromName, $to, $htmlLayout, $emailSubject);
         if ($send === true) {
@@ -206,14 +206,15 @@ class plgHikashopCron_Email_Report extends JPlugin
     {
         // Prep and execute query
         $query  = "SELECT ";
-	$query .= " 	hop.order_product_name      AS productName, ";
-        $query .= " 	hp.product_id               AS product_id, ";
+	$query .= " 	hop.order_product_name          AS productName, ";
+        $query .= " 	hp.product_id                   AS product_id, ";
 	$query .= " 	SUM(hop.order_product_quantity) AS productQuantity ";
 	$query .= " FROM  #__hikashop_order_product hop ";
 	$query .= " INNER JOIN #__hikashop_order   ho ON ho.order_id   = hop.order_id ";
 	$query .= " INNER JOIN #__hikashop_product hp ON hp.product_id = hop.product_id ";
-	$query .= " {$where} ";
+	$query .= " {$where} AND ho.order_status = 'confirmed' AND ho.order_created > " . (time() - (60 * 60 * 24 * 7 * 3));
 	$query .= " GROUP BY hop.order_product_name ";
+        
         $db = JFactory::getDbo();
         $db->setQuery($query);
         $resultSet = $db->execute();
@@ -252,27 +253,28 @@ class plgHikashopCron_Email_Report extends JPlugin
         // Prep and execute query
         $query  = "SELECT ";
         $query .= " 	ho.order_id                 AS order_id, ";
-        
         $query .= "     ho.order_created            AS order_created,";
-        
         $query .= " 	ha.address_title            AS title, ";
 	$query .= " 	ha.address_firstname        AS firstName, ";
         $query .= " 	ha.address_middle_name      AS middleName, ";
         $query .= " 	ha.address_lastname         AS lastName, ";
-        
         $query .= " 	ha.address_company          AS companyStreet, ";
         $query .= " 	ha.address_street           AS street, ";
         $query .= " 	ha.address_post_code        AS postcode, ";
         $query .= " 	ha.address_state            AS state, ";
-       
         $query .= " 	ha.address_telephone        AS telephone ";
-	$query .= " FROM  #__hikashop_order_product hop ";
-	$query .= " INNER JOIN #__hikashop_order   ho ON ho.order_id   = hop.order_id ";
-	$query .= " INNER JOIN #__hikashop_product hp ON hp.product_id = hop.product_id ";
-        $query .= " INNER JOIN #__hikashop_address ha ON ha.address_id = ho.order_shipping_address_id ";
-	$query .= " WHERE hp.date = '{$date}' ";
+	$query .= " FROM  #__hikashop_order ho ";
+        $query .= " INNER JOIN #__hikashop_address ha  ON ha.address_id = ho.order_shipping_address_id ";
+	$query .= " WHERE   ho.order_status = 'confirmed'  ";
+        $query .= "     AND ho.order_created > " . (time() - (60 * 60 * 24 * 7 * 3));
+        $query .= "     AND ho.order_id IN (";
+        $query .= "         SELECT DISTINCT ihop.order_id ";
+        $query .= "             FROM #__hikashop_order_product  ihop ";
+        $query .= "             INNER JOIN #__hikashop_product  ihp ON ihp.product_id = ihop.product_id ";
+        $query .= "             INNER JOIN #__hikashop_order    iho ON iho.order_id   = ihop.order_id ";
+        $query .= "             WHERE iho.order_status = 'confirmed' AND ihp.date = '{$date}' AND iho.order_created > " . (time() - (60 * 60 * 24 * 7 * 3));
+        $query .= "     ) ";
         $query .= " ORDER BY ho.order_created DESC";
-
         
         $db = JFactory::getDbo();
         $db->setQuery($query);

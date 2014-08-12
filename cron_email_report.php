@@ -136,13 +136,13 @@ class plgHikashopCron_Email_Report extends JPlugin
                     </head>
                     <body>
                         <section class="container">
-                            <header class="jumbotron">
+                            <header class="row jumbotron">
                                 <hgroup>
                                     <h2>Hikashop Cron Email Report</h2>
                                     <h3>for ' . strftime("%A (%d/%m/%Y)", $date) . '</h3>
                                 </hgroup>
                             </header>
-                            <article class="row">
+                            <article class="well row">
                                 <section  class="col-md-8">
                                     ' . $ordersHTML . '
                                 </section>
@@ -150,8 +150,8 @@ class plgHikashopCron_Email_Report extends JPlugin
                                     ' . $productsHTML . '
                                 </section>
                             </article>
-                            <footer>
-                                <section class="well">
+                            <footer class="well row">
+                                <section>
                                     <h5 class="text-right">Found a bug? Report it on the <a href="https://github.com/stoyandimov/hika-cron-email-report/issues">Github Issue Tracker</a></h5>
                                 </section>
                             </footer> 
@@ -246,8 +246,7 @@ class plgHikashopCron_Email_Report extends JPlugin
         $resultSet = $db->execute();
         
         // Iterate over results and prep HTML
-        $html  = '<div class="well">';
-        $html .= '  <div class="panel panel-default">';
+        $html  = '  <div class="panel panel-default">';
         $html .= '      <ul class="list-group" style="margin-left: 0">';
         $html .= '          <li class="list-group-item"><h4>Orders</h4></li>';
         $html .= '      </ul>';
@@ -278,7 +277,6 @@ class plgHikashopCron_Email_Report extends JPlugin
             $html .= '      </div>';            
             $html .= '  </li>';
         }
-        $html .= '</div>';
         
         return $html;
     }
